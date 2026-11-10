@@ -20,6 +20,7 @@
 }
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{overflow-x:clip}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-display);font-size:15.5px;line-height:1.5;overflow-x:clip;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
@@ -133,6 +134,39 @@ textarea{min-height:90px;resize:vertical}
 .pin .nm{font-variation-settings:"wdth" 120;font-weight:620;text-transform:uppercase;font-size:.86rem;line-height:1.1}
 .pin .lv{font-size:.8rem;color:var(--muted)}
 .mine-tag{font-size:.66rem;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:.08em}
+/* live + QR */
+.live{display:inline-flex;align-items:center;gap:7px;font-variation-settings:"wdth" 115;font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;padding:6px 10px;border:1.5px solid var(--ink);background:var(--surface)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.live.on i{background:var(--lime);box-shadow:0 0 10px var(--lime);animation:pulse 1.6s ease-in-out infinite}
+.live.off i{background:var(--pink)}
+@keyframes pulse{50%{opacity:.35}}
+.btn.neon{background:var(--lime);color:#0A0A0A;border-color:var(--lime)}
+.toasts{position:absolute;left:50%;top:18px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:6;pointer-events:none;width:max-content;max-width:min(92%,420px)}
+.toast{background:var(--ink);color:var(--bg);padding:8px 14px;font-weight:600;font-size:.85rem;display:flex;gap:10px;align-items:center;animation:tin .4s ease-out}
+.toast b{font-family:var(--f-pixel);font-weight:400;font-size:1.1rem;color:var(--accent-text)}
+.toast img{width:34px;height:34px}
+@keyframes tin{from{transform:translateY(-10px);opacity:0}}
+.qr-veil{position:fixed;inset:0;z-index:80;background:rgba(5,5,5,.86);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.qr-card{background:var(--surface);border:1.5px solid var(--ink);padding:24px;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:min(560px,100%);text-align:center}
+.qr-card h2{font-variation-settings:"wdth" 125;font-weight:620;text-transform:uppercase;font-size:clamp(1.4rem,4vw,2.4rem);line-height:.95}
+.qr-card h2 span{font-family:var(--f-pixel);font-weight:400;color:var(--lime)}
+.qr-box{background:#FFFFFF;padding:16px;line-height:0;max-width:100%}
+.qr-box img,.qr-box canvas{width:min(68vmin,380px)!important;height:auto!important;max-width:100%;image-rendering:pixelated}
+.qr-url{font-family:var(--f-px2);font-size:.85rem;word-break:break-all;color:var(--muted);user-select:all}
+.qr-card p{margin:0;max-width:34rem}
+.phone-top{display:none}
+body.phone .hero,body.phone .band,body.phone .board{display:none}
+body.phone .phone-top{display:flex;flex-direction:column;gap:10px}
+body.phone .phone-top h1{font-variation-settings:"wdth" 125;font-weight:620;text-transform:uppercase;font-size:clamp(2rem,10vw,3rem);line-height:.9}
+body.phone .phone-top h1 span{font-family:var(--f-pixel);font-weight:400;color:var(--pink)}
+body.phone .maker{padding:18px}
+body.phone .sec-head{order:-2}
+body.phone .preview{order:-1}
+@media (min-width:901px){.tools{max-width:calc(100% - 380px)}}
+.done{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;border:1.5px solid var(--lime);padding:20px;background:var(--surface)}
+.done img{width:min(60vw,260px);aspect-ratio:1}
+.done b{font-variation-settings:"wdth" 125;font-weight:640;text-transform:uppercase;font-size:1.3rem}
 footer{color:var(--muted);font-size:.82rem;border-top:1.5px solid var(--ink);padding-top:14px}
 @media (prefers-reduced-motion: reduce){.pin{transition:none}.pin:hover{transform:none}}
 </style>
@@ -140,16 +174,23 @@ footer{color:var(--muted);font-size:.82rem;border-top:1.5px solid var(--ink);pad
 <body>
 <canvas id="bgfx" aria-hidden="true"></canvas>
 <div class="wrap">
+  <header class="phone-top">
+    <p class="eyebrow">Sense &amp; Sensibility · live taste orbit</p>
+    <h1>Add your <span>taste</span></h1>
+    <p class="lede">Shape a recipe for a feeling. When you release it, it appears on the big screen in real time.</p>
+    <span class="live" id="liveP"><i></i><span>Connecting…</span></span>
+  </header>
   <section class="hero" aria-label="Taste orbit in 3D">
         <div class="stage" id="stage">
       <canvas id="gl" aria-label="3D zodiac plate with twelve houses. Recipes orbit above it as organic objects. Drag to rotate, click an object to read its card."></canvas>
       <div class="tip" id="tip" hidden></div>
+      <div class="toasts" id="toasts" aria-live="polite"></div>
       <p class="nogl" id="nogl" hidden>The 3D orbit needs WebGL, which this browser has turned off. The cards and pinboard below still work.</p>
     </div>
     <header class="mast">
       <p class="eyebrow">Experimental Game Cultures · Spielraum · bioludic design</p>
       <h1>Sense <span class="amp">&amp;</span> Sensibility</h1>
-      <p class="lede">A taste orbit. Every flavour, smell and feeling is a small body circling you. Drag to turn the sky, click a body to draw its card.</p>
+      <p class="lede">A taste orbit. Every flavour, smell and feeling is a small body circling you. Drag to turn the sky, click a body to draw its card. Scan the code to add yours live.</p>
     </header>
     <div class="tools">
       <div class="seg" role="group" aria-label="View">
@@ -157,6 +198,8 @@ footer{color:var(--muted);font-size:.82rem;border-top:1.5px solid var(--ink);pad
         <button type="button" id="mMap" aria-pressed="false">Taste map</button>
       </div>
       <button type="button" class="btn" id="pauseBtn">Pause</button>
+      <button type="button" class="btn neon" id="qrBtn">Join from your phone</button>
+      <span class="live" id="live"><i></i><span>Connecting…</span></span>
       <span class="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Q</kbd><kbd>E</kbd> down/up · <kbd>Shift</kbd> faster · arrows or drag to orbit · <kbd>R</kbd> reset</span><span class="hint" id="count"></span>
     </div>
     <aside class="tarot" id="card" aria-live="polite">
@@ -194,8 +237,10 @@ footer{color:var(--muted);font-size:.82rem;border-top:1.5px solid var(--ink);pad
       <div class="field full"><span class="lbl">Skin colour</span><div class="pick" id="fColors"></div></div>
       <div class="field full"><label class="lbl" for="fIng">Ingredients, one per line (real and impossible)</label><textarea id="fIng" placeholder="steamed dough&#10;the sound of rain on a tram roof&#10;soy, ginger, spring onion"></textarea></div>
       <div class="field full"><label class="lbl" for="fMethod">Method</label><input type="text" id="fMethod" maxlength="160" placeholder="Steam for twelve minutes, or two stops."></div>
-      <div class="form-actions"><button type="submit" class="btn primary">Release into orbit</button><span class="status" id="status" role="status"></span></div>
+      <div class="form-actions"><button type="submit" class="btn primary" id="submitBtn">Release into orbit</button><span class="status" id="status" role="status"></span></div>
     </form>
+    <div class="done" id="done" hidden><span class="lbl">Released</span><img id="doneImg" alt=""><b id="doneName"></b><p>Your taste is now orbiting on every screen.</p>
+      <div class="form-actions" style="justify-content:center"><button type="button" class="btn primary" id="againBtn">Add another taste</button><button type="button" class="btn" id="seeBtn">See the orbit</button></div></div>
     <div class="preview"><span class="lbl">Live preview</span><div class="portrait" id="pFrame"><img id="pImg" alt="Preview of your taste object"></div><span class="lbl" id="pHouse"></span></div>
   </section>
 
@@ -204,9 +249,21 @@ footer{color:var(--muted);font-size:.82rem;border-top:1.5px solid var(--ink);pad
     <div class="pins" id="pins"></div>
   </section>
 
-  <footer>Sense &amp; Sensibility · a workshop artefact on taste, alterity and microbial play. Recipes you add are kept in this browser only.</footer>
+  <footer>Sense &amp; Sensibility · a workshop artefact on taste, alterity and microbial play. <span id="footNote">Recipes added here are shared live with everyone who has this orbit open.</span></footer>
 </div>
 
+<div class="qr-veil" id="qrVeil" hidden role="dialog" aria-modal="true" aria-labelledby="qrH">
+  <div class="qr-card">
+    <span class="lbl">Scan to play</span>
+    <h2 id="qrH">Add your taste <span>to the orbit</span></h2>
+    <div class="qr-box" id="qrBox"></div>
+    <span class="qr-url" id="qrUrl"></span>
+    <p id="qrText">Open the link on your phone, write a recipe for a feeling, release it. It lands here live.</p>
+    <button type="button" class="btn primary" id="qrClose">Close</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -470,7 +527,7 @@ function init3D(){
     const moons=new THREE.Group();o.s.forEach((k,j)=>{const m=new THREE.Mesh(moonGeo,moonMats[k]);m.userData={a:j*2.1,sp:.8+j*.35,tilt:.35+j*.45};moons.add(m)});holder.add(moons);
     const hit=new THREE.Mesh(hitGeo,hitMat);hit.userData.item=o;holder.add(hit);
     const sh=new THREE.Mesh(shadowGeo,shadowMat);sh.rotation.x=-Math.PI/2;sh.renderOrder=2;scene.add(sh);scene.add(holder);
-    o._3d={holder,spin,moons,hit,sh,body:b};o.fam=b.fam;o.img=snap(b.group)}
+    o._3d={holder,spin,moons,hit,sh,body:b};if(o._pop)holder.scale.setScalar(.01);o.fam=b.fam;o.img=snap(b.group)}
   function removeItem(o){if(!o._3d)return;scene.remove(o._3d.holder);scene.remove(o._3d.sh);dispose(o._3d.body);o._3d=null}
 
   /* sizing */
@@ -538,11 +595,87 @@ function init3D(){
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state={items:[],selected:null,hover:null,mode:reduce?'map':'orbit',paused:reduce};
 let mine=load();
-function sync(){
-  const want=[...SEEDS.map((o,i)=>({...o,id:'seed'+i})),...mine.map(o=>({...o,mine:true}))];
+const ONCLAUDE=!!(window.claude&&window.claude.use);
+const QS=new URLSearchParams(location.search),ROOM=(QS.get('room')||'').replace(/[^a-z0-9_-]/gi,'').slice(0,32);
+const JOIN_URL=ONCLAUDE?'https://claude.ai/artifact/YNLYaqDkRmVys319ZPZziT#add':location.origin+location.pathname+(ROOM?'?room='+ROOM:'')+'#add';
+const NTFY='https://ntfy.sh/',TOPIC='bioludic-sns-'+(ROOM||'orbit-k7q2m9x4');
+const live={on:false,mode:null,es:null,db:null,uid:null,owner:false,ready:false,remote:[],myItems:[],queue:Promise.resolve()};
+const str=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+const PALV=Object.values(PAL);
+function clean(x,author,idx){if(!x||typeof x!=='object')return null;const name=str(x.name,40).trim();if(!name)return null;
+  const t=Array.isArray(x.t)?TASTES.map((h,i)=>{const v=+x.t[i];return Number.isFinite(v)?Math.min(1,Math.max(0,v)):0}):[0,0,0,0,0,0];
+  const s=Array.isArray(x.s)?[...new Set(x.s.filter(k=>SMELLS.some(h=>h.k===k)))].slice(0,3):[];
+  const love=Object.prototype.hasOwnProperty.call(LOVES,x.love)?x.love:'Ludus';
+  const p=profile({t,s}),color=PALV.includes(x.color)?x.color:(AUTOCOL[p.house.k]||PAL.pink);
+  const lid=str(x.lid,24).replace(/[^a-z0-9]/gi,'')||String(idx);
+  return{id:'r'+author.slice(0,12).replace(/[^a-z0-9]/gi,'')+'-'+lid,lid,author,name,feel:str(x.feel,60),love,microbe:str(x.microbe,70),t,s,color,
+    ing:Array.isArray(x.ing)?x.ing.filter(v=>typeof v==='string').slice(0,8).map(v=>v.slice(0,120)):[],method:str(x.method,160),at:+x.at||0}}
+function userRecipes(){return live.on?live.remote.map(o=>({...o,mine:o.author===live.uid,remote:true})):mine.map(o=>({...o,mine:true}))}
+function setLive(kind,text){['live','liveP'].forEach(id=>{const el=$(id);el.className='live '+kind;el.lastElementChild.textContent=text})}
+function toast(o){const box=$('toasts'),el=document.createElement('div');el.className='toast';
+  if(o.img){const im=document.createElement('img');im.src=o.img;im.alt='';el.appendChild(im)}
+  const tx=document.createElement('span');tx.append('New taste · ');const b=document.createElement('b');b.textContent=o.name;tx.appendChild(b);el.appendChild(tx);
+  box.appendChild(el);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>el.remove(),5200)}
+async function connect(){
+  if(!ONCLAUDE){connectNtfy();return}
+  let db=null,user=null;
+  try{[db,user]=await Promise.all([window.claude?.use?.('db')??null,window.claude?.use?.('user')??null])}catch(e){}
+  if(!db){setLive('off','Offline · this browser only');$('footNote').textContent='Live sharing is not available in this view, so recipes added here stay in this browser.';return}
+  let uid=null;try{uid=user?await user.id():null}catch(e){}
+  try{live.owner=user?await user.isOwner():false}catch(e){}
+  $('qrText').textContent='Open the link on your phone, sign in to Claude, write a recipe for a feeling, release it. It lands here live.';
+  live.db=db;live.on=true;live.mode='db';live.uid=uid;sync();
+  if(!uid){setLive('on','Live · watching');$('submitBtn').disabled=true;$('status').textContent='Sign in to Claude to add your own taste.'}
+  try{const w=user?await user.can('data.write'):null;if(w===false){$('submitBtn').disabled=true;$('status').textContent='You can watch the orbit. To add a taste, ask the host to give you Contributor access.'}}catch(e){}
+  const timer=setTimeout(()=>{if(!live.ready)setLive('off','Live orbit not reachable yet')},10000);
+  db.collection('recipes').onSnapshot(snap=>{
+    const all=[];snap.docs.forEach(d=>{const data=d.data();const items=data&&Array.isArray(data.items)?data.items:[];items.slice(0,40).forEach((x,i)=>{const c=clean(x,d.id,i);if(c)all.push(c)})});
+    all.sort((a,b)=>a.at-b.at);
+    const before=new Set(live.remote.map(o=>o.id)),first=!live.ready;
+    live.remote=all;live.myItems=uid?(snap.docs.find(d=>d.id===uid)?.data()?.items||[]).slice():[];
+    if(!snap.metadata.fromCache){live.ready=true;clearTimeout(timer)}
+    const fresh=first?[]:all.filter(o=>!before.has(o.id)&&o.author!==uid);
+    fresh.forEach(o=>o._pop=true);
+    sync(fresh.map(o=>o.id));
+    fresh.forEach(o=>{const it=state.items.find(x=>x.id===o.id);if(it)toast(it)});
+    const people=new Set(all.map(o=>o.author)).size;
+    setLive(live.ready?'on':'',live.ready?`Live · ${all.length} taste${all.length===1?'':'s'} from ${people} ${people===1?'person':'people'}`:'Connecting…');
+  },e=>{clearTimeout(timer);setLive('off',e&&e.code==='revoked'?'Live orbit closed':'Live orbit disconnected')});
+}
+/* ---- public relay for hosting outside Claude (GitHub Pages etc.) ---- */
+const AKEY='taste-orbit-archive-'+TOPIC;
+const nt={items:new Map(),dels:new Set(),ready:false,pend:[],t:0};
+function ntUid(){try{let u=localStorage.getItem('taste-orbit-uid');if(!u){u='b'+Math.random().toString(36).slice(2,12);localStorage.setItem('taste-orbit-uid',u)}return u}catch(e){return 'b'+Math.random().toString(36).slice(2,12)}}
+function ntSave(){try{localStorage.setItem(AKEY,JSON.stringify({items:[...nt.items.values()].map(o=>o.raw),dels:[...nt.dels]}))}catch(e){}}
+function ntApply(p,fromLive){if(!p||typeof p!=='object'||p.v!==1)return;const author=str(p.author,24).replace(/[^a-z0-9]/gi,'');if(!author)return;
+  if(p.kind==='add'){const c=clean(p.item,author,0);if(!c||nt.dels.has(c.id)||nt.items.has(c.id))return;c.raw=p;nt.items.set(c.id,c);if(fromLive&&nt.ready&&author!==live.uid)nt.pend.push(c.id)}
+  else if(p.kind==='del'){const id='r'+author.slice(0,12)+'-'+str(p.lid,24).replace(/[^a-z0-9]/gi,'');nt.dels.add(id);nt.items.delete(id)}
+  else return;clearTimeout(nt.t);nt.t=setTimeout(ntFlush,80)}
+function ntFlush(){live.remote=[...nt.items.values()].sort((a,b)=>a.at-b.at);const pop=nt.pend.splice(0);
+  live.remote.forEach(o=>o._pop=pop.includes(o.id));sync(pop);pop.forEach(id=>{const it=state.items.find(x=>x.id===id);if(it)toast(it)});ntSave();ntStatus()}
+function ntStatus(){const n=live.remote.length,pp=new Set(live.remote.map(o=>o.author)).size;
+  if(live.es)setLive(nt.ready?'on':'',nt.ready?`Live · ${n} taste${n===1?'':'s'} from ${pp} ${pp===1?'person':'people'}`:'Connecting…');else setLive('on','Ready · your taste goes to the big screen')}
+function connectNtfy(){live.on=true;live.mode='ntfy';live.uid=ntUid();live.owner=QS.has('host');
+  try{const a=JSON.parse(localStorage.getItem(AKEY)||'null');if(a){(a.dels||[]).forEach(d=>typeof d==='string'&&nt.dels.add(d));(a.items||[]).forEach(p=>ntApply(p,false))}}catch(e){}
+  $('footNote').textContent='Recipes travel live through the public relay ntfy.sh, which keeps them for about 12 hours. Screens that had the orbit open keep their own copy.';
+  ntFlush();if(!document.body.classList.contains('phone'))ntSubscribe()}
+function ntSubscribe(){if(live.es||!window.EventSource){ntStatus();return}
+  const es=new EventSource(NTFY+TOPIC+'/sse?since=all');live.es=es;let rt=0;
+  es.onopen=()=>{clearTimeout(rt);rt=setTimeout(()=>{nt.ready=true;ntStatus()},1500);ntStatus()};
+  es.onmessage=e=>{let m,pl;try{m=JSON.parse(e.data)}catch(x){return}if(!m||m.event!=='message'||typeof m.message!=='string')return;try{pl=JSON.parse(m.message)}catch(x){return}ntApply(pl,true)};
+  es.onerror=()=>{setLive('off','Reconnecting to the live orbit…')};
+  setTimeout(()=>{if(!nt.ready)setLive('off','Live orbit not reachable yet')},10000)}
+async function ntPost(obj){const body=JSON.stringify(obj);if(body.length>3900)throw{code:'invalid_argument'};
+  let r;try{r=await fetch(NTFY+TOPIC,{method:'POST',body})}catch(e){throw{code:'unavailable'}}
+  if(!r.ok)throw{code:r.status===429?'rate':'unavailable'};ntApply(obj,false)}
+function writeMine(items){const db=live.db,uid=live.uid;
+  const job=live.queue.then(()=>db.doc('recipes/'+uid).set({items,updatedAt:Date.now()}));live.queue=job.catch(()=>{});return job}
+function errText(e){const c=e&&e.code;return c==='rate'?'Lots of tastes at once. Wait a few seconds and release again.':c==='invalid_argument'?'You can watch but not add. Ask the host to give you Contributor access.':c==='quota_exceeded'?'The orbit is full. Ask the host to remove a few tastes.':'That did not reach the orbit. Check your connection and try again.'}
+function sync(popIds=[]){
+  const want=[...SEEDS.map((o,i)=>({...o,id:'seed'+i})),...userRecipes()];
   const have=new Map(state.items.map(o=>[o.id,o]));
   const next=want.map(o=>{if(have.has(o.id))return have.get(o.id);const p=profile(o),r=rng(hash(o.id+'o'));
-    const it={...o,...p,ang:p.base+(state.mode==='orbit'?(r()-.5)*2.4:0),speed:.04+.08*(1-p.I),ph:r()*TAU};
+    const it={...o,...p,ang:p.base+(state.mode==='orbit'?(r()-.5)*2.4:0),speed:.04+.08*(1-p.I),ph:r()*TAU,_pop:popIds.includes(o.id)};
     if(gl)gl.addItem(it);else it.fam=family(it);return it});
   state.items.forEach(o=>{if(!next.includes(o)&&gl)gl.removeItem(o)});
   state.items=next;next.forEach((o,i)=>o.num=i+1);
@@ -566,8 +699,15 @@ function renderCard(){const o=state.selected;if(!o)return;if(gl)gl.setLove(o.lov
   $('cFeel').textContent=o.feel||'an unnamed feeling';
   const ul=$('cIng');ul.replaceChildren();(o.ing&&o.ing.length?o.ing:['(no ingredients yet)']).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li)});
   $('cMethod').textContent=o.method||'Trust your tongue.';$('cMicrobe').textContent='Microbial partner: '+(o.microbe||'none');
-  $('cDelete').hidden=!o.mine}
-$('cDelete').addEventListener('click',()=>{const o=state.selected;if(!o||!o.mine)return;mine=mine.filter(m=>m.id!==o.id);save(mine);state.selected=null;sync()});
+  $('cDelete').hidden=!(o.mine||(live.owner&&o.remote))}
+$('cDelete').addEventListener('click',async()=>{const o=state.selected;if(!o)return;
+  if(o.remote&&live.mode==='ntfy'){const btn=$('cDelete');btn.disabled=true;
+    try{await ntPost({v:1,kind:'del',author:o.author,lid:o.lid});clearTimeout(nt.t);ntFlush();state.selected=null}catch(e){$('status').textContent=errText(e)}btn.disabled=false;return}
+  if(o.remote&&live.db){const btn=$('cDelete');btn.disabled=true;
+    try{if(o.author===live.uid){await writeMine(live.myItems.filter(x=>String(x.lid)!==o.lid))}
+      else if(live.owner){const ref=live.db.doc('recipes/'+o.author),snap=await ref.get();const items=(snap.data()?.items||[]).filter(x=>String(x.lid)!==o.lid);await ref.set({items,updatedAt:Date.now()})}
+      state.selected=null}catch(e){$('status').textContent=errText(e)}btn.disabled=false;return}
+  if(!o.mine)return;mine=mine.filter(m=>m.id!==o.id);save(mine);state.selected=null;sync()});
 
 function renderPins(){const box=$('pins');box.replaceChildren();
   state.items.forEach(o=>{const b=document.createElement('button');b.type='button';b.className='pin';b.dataset.id=o.id;b.style.setProperty('--c',o.color||o.house.color);
@@ -575,7 +715,7 @@ function renderPins(){const box=$('pins');box.replaceChildren();
     if(o.img){const im=document.createElement('img');im.src=o.img;im.alt='';th.appendChild(im)}else{const ph=document.createElement('span');ph.className='ph';th.appendChild(ph)}
     const m=document.createElement('div');m.className='meta';const n=document.createElement('span');n.className='nm';n.textContent=o.name;
     const l=document.createElement('span');l.className='lv';l.textContent=o.love+' · '+FAMNAME[o.fam];m.append(n,l);
-    if(o.mine){const t=document.createElement('span');t.className='mine-tag';t.textContent='your recipe';m.appendChild(t)}
+    if(o.mine||o.remote){const t=document.createElement('span');t.className='mine-tag';t.textContent=o.mine?'your recipe':'added live';m.appendChild(t)}
     b.append(th,m);b.addEventListener('click',()=>{select(o);$('card').scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'})});box.appendChild(b)});
   markPins()}
 function markPins(){document.querySelectorAll('.pin').forEach(p=>p.classList.toggle('sel',!!state.selected&&p.dataset.id===state.selected.id))}
@@ -602,9 +742,35 @@ let pv=0;function preview(){TASTES.forEach(h=>$('o_'+h.k).textContent=$('t_'+h.k
   pv=setTimeout(()=>{const d=draft();$('pFrame').style.setProperty('--c',d.color);$('pHouse').textContent='House of '+profile(d).house.label+' · '+FAMNAME[family(d)];
     if(gl){$('pImg').src=gl.buildPreview(d)}else $('pImg').hidden=true},140)}
 $('maker').addEventListener('input',ev=>{if(ev.target.type==='checkbox'&&SMELLS.filter(h=>$('s_'+h.k).checked).length>3)ev.target.checked=false;preview()});
-$('maker').addEventListener('submit',ev=>{ev.preventDefault();if(!$('fName').value.trim()){$('status').textContent='Give your recipe a name first.';$('fName').focus();return}
-  const d=draft();d.id='mine'+Date.now().toString(36);mine.push(d);save(mine);sync();select(state.items.find(o=>o.id===d.id));
-  $('status').textContent=d.name+' is now in orbit.';$('maker').reset();fl.value='Ludus';preview();$('stage').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'})});
+$('maker').addEventListener('submit',async ev=>{ev.preventDefault();if(!$('fName').value.trim()){$('status').textContent='Give your recipe a name first.';$('fName').focus();return}
+  const d=draft(),btn=$('submitBtn');
+  if(live.mode==='ntfy'){const lid=Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+    const item={lid,name:d.name,feel:d.feel,love:d.love,microbe:d.microbe,t:d.t.map(v=>Math.round(v*10)/10),s:d.s,color:d.color,ing:d.ing,method:d.method,at:Date.now()};
+    btn.disabled=true;$('status').textContent='Releasing…';
+    try{await ntPost({v:1,kind:'add',author:live.uid,item})}catch(e){$('status').textContent=errText(e);btn.disabled=false;return}
+    clearTimeout(nt.t);ntFlush();btn.disabled=false;const it=state.items.find(o=>o.lid===lid&&o.author===live.uid);if(it)select(it);released(it||d);return}
+  if(live.db&&live.uid){const lid=Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+    const item={lid,name:d.name,feel:d.feel,love:d.love,microbe:d.microbe,t:d.t.map(v=>Math.round(v*10)/10),s:d.s,color:d.color,ing:d.ing,method:d.method,at:Date.now()};
+    btn.disabled=true;$('status').textContent='Releasing…';
+    try{await writeMine([...live.myItems,item].slice(-30))}catch(e){$('status').textContent=errText(e);btn.disabled=false;return}
+    btn.disabled=false;const it=state.items.find(o=>o.lid===lid&&o.author===live.uid);if(it)select(it);released(it||d);return}
+  d.id='mine'+Date.now().toString(36);mine.push(d);save(mine);sync();const it=state.items.find(o=>o.id===d.id);select(it);released(it)});
+function released(o){$('status').textContent=o.name+' is now in orbit.';
+  if(document.body.classList.contains('phone')){$('maker').hidden=true;$('done').hidden=false;$('doneName').textContent=o.name;$('doneImg').src=o.img||(gl?gl.buildPreview(o):'');$('done').scrollIntoView({block:'start'})}
+  else $('stage').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});
+  $('maker').reset();fl.value='Ludus';preview()}
+$('againBtn').onclick=()=>{$('done').hidden=true;$('maker').hidden=false;$('status').textContent='';$('fName').focus()};
+$('seeBtn').onclick=()=>{location.hash='';applyHash();if(live.mode==='ntfy')ntSubscribe();window.scrollTo(0,0)};
+function applyHash(){document.body.classList.toggle('phone',location.hash==='#add');if(location.hash!=='#add'){$('done').hidden=true;$('maker').hidden=false}}
+addEventListener('hashchange',()=>{applyHash();if(live.mode==='ntfy'&&location.hash!=='#add')ntSubscribe()});applyHash();
+/* QR */
+let qrMade=false;
+$('qrBtn').onclick=()=>{$('qrVeil').hidden=false;$('qrUrl').textContent=JOIN_URL.replace('https://','');
+  if(!qrMade&&window.QRCode){try{new QRCode($('qrBox'),{text:JOIN_URL,width:512,height:512,colorDark:'#0A0A0A',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.M});qrMade=true}catch(e){}}
+  if(!qrMade)$('qrBox').hidden=true;$('qrClose').focus()};
+const closeQr=()=>{$('qrVeil').hidden=true;$('qrBtn').focus()};
+$('qrClose').onclick=closeQr;$('qrVeil').addEventListener('click',e=>{if(e.target.id==='qrVeil')closeQr()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('qrVeil').hidden)closeQr()});
 
 function paintBg(){const cv=$('bgfx'),w=innerWidth,h=innerHeight;cv.width=w;cv.height=h;const g=cv.getContext('2d');
   const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
@@ -630,7 +796,7 @@ function paintBg(){const cv=$('bgfx'),w=innerWidth,h=innerHeight;cv.width=w;cv.h
     if(k%3===0){g.fillRect(x-6,y,13,1);g.fillRect(x,y-6,1,13)}else if(k%3===1){g.fillRect(x,y,4,4);g.fillRect(x+6,y,4,4);g.fillRect(x+3,y+6,4,4)}else g.fillRect(x,y,3,3)}
   g.globalAlpha=1}
 let bgT=0;addEventListener('resize',()=>{clearTimeout(bgT);bgT=setTimeout(paintBg,150)});
-paintBg();sync();preview();
+paintBg();sync();preview();connect();
 })();
 </script>
 </body>
